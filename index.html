@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>闪点协议 · FLASHPOINT PROTOCOL</title>
+<script>
+  /* 主题预置，避免刷新时闪白/闪黑 */
+  try {
+    var __s = JSON.parse(localStorage.getItem('fp_settings') || '{}');
+    if (__s && __s.theme) document.documentElement.setAttribute('data-theme', __s.theme);
+  } catch (e) {}
+</script>
+<meta name="description" content="闪点协议：点击式实时抢修游戏。抢在 AI 前面修复更多电网闪点。" />
+<link rel="stylesheet" href="style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b1220'/%3E%3Ccircle cx='32' cy='32' r='14' fill='%23ffd54f'/%3E%3C/svg%3E" />
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<main id="app">
+
+  <!-- 加载页 -->
+  <section class="screen active" id="screen-loading">
+    <div class="brand">
+      <h1 class="logo">闪点协议</h1>
+      <p class="logo-sub">FLASHPOINT PROTOCOL</p>
+    </div>
+    <div class="ring-wrap">
+      <div class="ring" id="load-ring"><div class="ring-inner"><span id="load-pct">0%</span></div></div>
+    </div>
+    <div class="load-log" id="load-log"></div>
+  </section>
+
+  <!-- 主菜单 -->
+  <section class="screen" id="screen-menu">
+    <div class="brand">
+      <h1 class="logo">闪点协议</h1>
+      <p class="logo-sub">FLASHPOINT PROTOCOL</p>
+    </div>
+    <div class="menu-main">
+      <button class="btn primary big" id="btn-start">开始游戏</button>
+      <button class="btn primary big" id="btn-plugins">插件设置</button>
+    </div>
+    <div class="menu-sub">
+      <button class="btn small" id="btn-changelog">更新日志</button>
+      <button class="btn small" id="btn-selfcheck">自检代码</button>
+      <button class="btn small lock" id="btn-log">日志 <span class="lock-ico">🔒</span></button>
+      <button class="btn small lock" id="btn-command">command命令 <span class="lock-ico">🔒</span></button>
+      <button class="btn small" id="btn-settings">设置</button>
+    </div>
+    <div class="menu-meta">
+      <span id="menu-ver">v1.2</span>
+      <span>最高分 <b id="menu-hs">0</b></span>
+      <span>外置插件 <b id="menu-ext">0 / 5</b></span>
+    </div>
+  </section>
+
+  <!-- 模式选择 -->
+  <section class="screen" id="screen-modes">
+    <header class="page-head">
+      <button class="btn ghost back" data-back="menu">← 返回</button>
+      <h2>选择模式</h2>
+    </header>
+    <div class="mode-grid" id="mode-grid"></div>
+    <p class="hint">灰色卡片表示依赖插件未启用，可以到「插件设置 → 系统插件」打开。</p>
+  </section>
+
+  <!-- 插件设置 -->
+  <section class="screen" id="screen-plugins">
+    <header class="page-head">
+      <button class="btn ghost back" data-back="menu">← 返回</button>
+      <h2>插件设置</h2>
+      <span class="counter" id="plugin-counter">已选 0 / 5</span>
+    </header>
+    <nav class="tabs" id="plugin-tabs">
+      <button class="tab active" data-tab="sys">系统插件</button>
+      <button class="tab" data-tab="ext">外置插件</button>
+      <button class="tab" data-tab="custom">自定义插件</button>
+      <button class="tab" data-tab="write">编写插件</button>
+    </nav>
+    <div class="plugin-body" id="plugin-body"></div>
+  </section>
+
+  <!-- 设置 -->
+  <section class="screen" id="screen-settings">
+    <header class="page-head">
+      <button class="btn ghost back" data-back="menu">← 返回</button>
+      <h2>设置</h2>
+    </header>
+    <div class="panel">
+      <div class="row"><span>音效</span><button class="switch" id="set-sound"></button></div>
+      <div class="row"><span>动画</span><button class="switch" id="set-anim"></button></div>
+      <div class="row"><span>开发者模式</span><button class="switch" id="set-dev"></button></div>
+      <div class="row"><span>AI 难度</span>
+        <select id="set-diff">
+          <option value="easy">简单</option>
+          <option value="normal">普通</option>
+          <option value="hard">困难</option>
+        </select>
+      </div>
+      <div class="row"><span>界面主题</span>
+        <div class="theme-pick" id="set-theme">
+          <button data-theme="dark">深色</button>
+          <button data-theme="light">浅色</button>
+          <button data-theme="cool">冷色</button>
+        </div>
+      </div>
+      <div class="row"><span>单局时长</span><b id="set-duration">60 秒</b></div>
+      <div class="row"><span>重新加载</span><button class="btn small" id="set-reload">重新打开</button></div>
+      <div class="row"><span>清除最高分</span><button class="btn small" id="set-clear-hs">清除</button></div>
+      <div class="row"><span>清除存档</span><button class="btn small" id="set-clear-all">清除</button></div>
+    </div>
+    <p class="dev-entry" id="dev-entry">开发者模式入口</p>
+  </section>
+
+  <!-- 更新日志 -->
+  <section class="screen" id="screen-changelog">
+    <header class="page-head">
+      <button class="btn ghost back" data-back="menu">← 返回</button>
+      <h2>更新日志</h2>
+    </header>
+    <div class="panel scroll">
+      <h3>v1.2 · 视觉与手感</h3>
+      <ul>
+        <li>动画引擎重写，缓动与节奏取自 PCL2：页面逐元素入场、按钮按压回弹、弹窗上滑</li>
+        <li>加载进度改为按真实启动步骤逐帧推进，不再分段跳变</li>
+        <li>新增界面主题：深色 / 浅色 / 冷色，设置中即时切换并记住</li>
+        <li>设置页新增「重新加载」与「开发者模式」开关</li>
+        <li>管理员密码不再显示在输入框提示中；命令台新增 <code>fp off dev</code></li>
+        <li>主标题改为「闪点协议」，FLASHPOINT PROTOCOL 作为副标题</li>
+      </ul>
+      <h3>v1.1 · PID 模式独立成册</h3>
+      <ul>
+        <li>新增 PID 进程模式：进程调度、CPU / 内存、任务管理器</li>
+        <li>模块核心加入 SP / ARC / BLT / SRG / PKS 五级体系</li>
+        <li>装配面板按级别决定节点数与闪烁速度</li>
+        <li>连击影响掉落级别权重</li>
+        <li>修复闪点、短路、闪点增殖等规则按准则文档校准</li>
+      </ul>
+      <h3>v1.0 · 首发</h3>
+      <ul>
+        <li>五种常规模式：普通 / 三角 / 多人运动 / 极限挑战 / QWQ</li>
+        <li>插件系统：核心层、用户层、模式核心、功能拓展、50 个外置插件</li>
+        <li>双密码开发者模式（密码不在界面显示）</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 自检 -->
+  <section class="screen" id="screen-selfcheck">
+    <header class="page-head">
+      <button class="btn ghost back" data-back="menu">← 返回</button>
+      <h2>自检代码</h2>
+    </header>
+    <div class="panel scroll"><pre id="selfcheck-out"></pre></div>
+  </section>
+
+  <!-- 游戏 -->
+  <section class="screen" id="screen-game">
+    <div class="hud">
+      <div class="hud-item"><span class="k">剩余时间</span><span class="v" id="hud-time">60s</span></div>
+      <div class="hud-item"><span class="k">分数</span><span class="v" id="hud-score">0</span></div>
+      <div class="hud-item"><span class="k">连击</span><span class="v" id="hud-combo">×0</span></div>
+      <div class="hud-item"><span class="k">能量</span><span class="v" id="hud-energy">40</span></div>
+      <div class="hud-item pid-only"><span class="k">CPU</span><span class="v" id="hud-cpu">0%</span></div>
+      <div class="hud-item pid-only"><span class="k">内存</span><span class="v" id="hud-mem">1/8G</span></div>
+      <div class="hud-right">
+        <span id="hud-mode">普通模式</span>
+        <span id="hud-plugins"></span>
+      </div>
+      <div class="hud-badges">
+        <span class="badge dev" id="badge-dev">DEV</span>
+        <span class="badge src" id="badge-src">SRC</span>
+        <span class="badge deg" id="badge-deg">DEGRADED</span>
+      </div>
+    </div>
+    <div class="warn-bar" id="warn-bar"></div>
+    <div class="play-area">
+      <div class="board-col">
+        <canvas id="board" width="576" height="576"></canvas>
+        <div class="countdown" id="countdown"></div>
+      </div>
+      <aside class="pid-panel" id="pid-panel">
+        <div class="pid-head">
+          任务管理器
+          <span class="pid-count" id="pid-count">1 进程</span>
+        </div>
+        <div class="pid-bulk">
+          <button class="btn tiny" id="pid-killall">结束所有无响应</button>
+          <button class="btn tiny" id="pid-suspendlow">挂起低优先级</button>
+        </div>
+        <div class="pid-list" id="pid-list"></div>
+        <div class="pid-res">
+          <div class="res-line"><span>CPU</span><b id="pid-cpu">0%</b></div>
+          <div class="bar"><i id="pid-cpu-bar"></i></div>
+          <div class="res-line"><span>内存</span><b id="pid-mem">1 / 8 GB</b></div>
+          <div class="bar mem"><i id="pid-mem-bar"></i></div>
+        </div>
+      </aside>
+    </div>
+    <div class="dock">
+      <button class="btn short" id="btn-short"><span id="short-label">短路</span><span id="short-cd"></span></button>
+      <div class="slots" id="slots"></div>
+      <button class="btn ghost" id="btn-quit">结束本局</button>
+      <span class="kbd-hint">ESC 暂停</span>
+    </div>
+  </section>
+
+  <!-- 结算 -->
+  <section class="screen" id="screen-result">
+    <div class="panel result-panel">
+      <h2 id="res-title">挑战结束</h2>
+      <div class="res-score" id="res-score">0</div>
+      <div class="res-tag" id="res-tag"></div>
+      <div class="res-list" id="res-list"></div>
+      <div class="res-stats" id="res-stats"></div>
+      <div class="res-actions">
+        <button class="btn primary" id="res-again">再来一局</button>
+        <button class="btn" id="res-mode">更换模式</button>
+        <button class="btn ghost" id="res-home">返回主页</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 装配面板 -->
+<div class="modal-mask" id="asm-panel">
+  <div class="modal asm">
+    <div class="asm-head">
+      <div>
+        <h3 id="asm-title">装配</h3>
+        <p class="asm-sub" id="asm-sub"></p>
+      </div>
+      <span class="lvl-badge" id="asm-badge">SP</span>
+    </div>
+    <div class="asm-grid" id="asm-grid"></div>
+    <div class="asm-foot">
+      <span id="asm-msg">记住闪烁顺序…</span>
+      <span><b id="asm-time">限时 6s</b> · <b id="asm-nodes">节点 3</b></span>
+    </div>
+  </div>
+</div>
+
+<!-- 暂停 -->
+<div class="modal-mask" id="pause-mask">
+  <div class="modal pause-modal">
+    <h3>已暂停</h3>
+    <p class="pause-hint">按 <kbd>ESC</kbd> 继续 · 剩余 <b id="pause-time">60s</b></p>
+    <div class="modal-actions pause-actions">
+      <button class="btn primary" id="pause-resume">继续</button>
+      <button class="btn" id="pause-restart">重新开始</button>
+      <button class="btn ghost" id="pause-quit">结束本局</button>
+    </div>
+  </div>
+</div>
+
+<!-- 通用弹窗 -->
+<div class="modal-mask" id="modal-root">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="data.js"></script>
+<script src="core.js"></script>
+<script src="ani.js"></script>
+<script src="modes.js"></script>
+<script src="pid.js"></script>
+<script src="loader.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
